@@ -1,69 +1,78 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+//import { Link } from 'react-router-dom';
 import './HomePage.css';
 import White_Ball from './white_ball.bmp';
 import White_Paddle from './paddles.bmp'
 
 function HomePage() {
 
-  const canvas_width = 900
-  const canvas_height = 600
+  const canvas_width = 900;
+  const canvas_height = 600;
 
-  const [x_current_pos, update_X_Current_Pos] = useState(canvas_width/2);
-  const [x_vect, update_X_Vect] = useState(1);
+  const [imagesLoaded, setImagesLoaded] = useState(false);
+  const [image1, setImage1] = useState(null);
+  const [image2, setImage2] = useState(null); 
+
+  loadImage((src) => {
+    
+    return new Promise((resolve, reject) => {
+      
+      const image = new Image();
+      image.src = src;
+
+      image.onload = () => {
+        resolve();
+      };
+
+      image.onerror = () => {
+        reject(error);
+      };
+
+    });
+  });
 
   useEffect(() => {
 
-    let x = 0;
-    let radius = 10;
+    const imageList = [
+      loadImage(White_Ball),
+      loadImage(White_Paddle),
+    ];
+
+    Promise.all(imageList)
+      .then((images) => {
+        setImage1(images[0]);
+        setImage2(images[1]);
+        setImagesLoaded(true);
+        })
+      .catch((error) => {
+        console.error('error loading images: ', error);
+        });
+  }, []);
+
+  document.addEventListener('DOMContentLoaded', () => { 
 
     const canvas = document.getElementById('myCanvas');
     const context = canvas.getContext('2d');
 
-    const reverseVect = () => {
-      update_X_Vect(x_vect * -1);
-    };
+    let x = canvas_width/2;
+    let y = canvas_height/2;
 
-    const update_Pos = () => {
-      update_X_Current_Pos(x_current_pos + x_vect);
-    };
+    const update = () => {
 
-    const ball_image = new Image();
-    ball_image.src = White_Ball;
+      x += 1;
 
-    ball_image.onload = () => {
-
-      context.drawImage(ball_image, canvas_width/2, canvas_height/2);
-
-      const update = () => {
-
-        let right_boundary = (canvas_width >= x_current_pos + radius + x);
-        let left_boundary = (0 >= x_current_pos - radius - x);
-
-        if (1 == right_boundary || 1 == left_boundary) {
-          reverseVect();
-        }
-
-        context.clearRect(0, 0, canvas_width, canvas_height);
-        context.drawImage(ball_image, x_current_pos, canvas_height/2);
-
-        update_Pos()
-
-        requestAnimationFrame(update);
-
-      }
+      context.clearRect(0, 0, canvas.width, canvas.height);
+      context.drawImage(image1, x, y);
+      context.drawImage(image2, 100, canvas_height/2);
+      context.drawImage(image2, canvas_width - 100, canvas_height/2);
 
       requestAnimationFrame(update);
 
     };
 
-    const paddle_image = new Image();
-    paddle_image.src = White_Paddle;
-    paddle_image.onload = () => {
-      context.drawImage(paddle_image, 100, canvas_height/2);
-      context.drawImage(paddle_image, canvas_width - 100, canvas_height/2);
-    }
-  }, []);
+    requestAnimationFrame(update);
+
+  });
 
   return (
     <>
@@ -79,7 +88,7 @@ function HomePage() {
       </div>
     </>
   );
-}
+};
 
 export default HomePage;
 
